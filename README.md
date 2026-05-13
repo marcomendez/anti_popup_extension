@@ -11,48 +11,18 @@ Extension para Chrome que bloquea popups y pestañas abiertas automáticamente p
 
 ## Cómo usar
 
-### Interfaz (popup)
-Al hacer clic en el icono de la extensión se abre un menú con dos controles:
+Al hacer clic en el icono de la extensión se abre un menú con un único toggle:
 
-1. **Extensión global** - Toggle principal
-   - **OFF (por defecto)**: La extensión no bloquea nada en ningún sitio
-   - **ON**: Activa el bloqueo (sujeto al estado por sitio)
+- **OFF (por defecto)**: La extensión no bloquea nada
+- **ON**: Bloquea todos los popups en todos los sitios
 
-2. **Bloqueo en este sitio** - Toggle individual
-   - Solo está disponible cuando el toggle global está ON
-   - Permite activar/desactivar el bloqueo solo para el sitio actual
-
-### Ejemplo de uso
-
-1. **Quieres bloquear popups en "sitio.com"**:
-   - Activa el toggle "Extensión global"
-   - Activa el toggle "Bloqueo en este sitio" (o usa el botón)
-
-2. **Quieres desactivar temporalmente**:
-   - Desactiva el toggle "Extensión global"
-   - No bloquea nada en ningún sitio
-
-3. **Quieres permitir popups en un sitio específico**:
-   - Mantén "Extensión global" ON
-   - Desactiva "Bloqueo en este sitio" para ese dominio
-
-### Persistencia
-- El estado global y por sitio se guarda automáticamente.
-- Si cierres Chrome y vuelvas a abrirlo, recordará la configuración.
+El estado se guarda automáticamente.
 
 ## Cómo funciona
 
-- **popup.html + popup.js**: Interfaz con toggles global y por sitio
+- **popup.html + popup.js**: Interfaz con toggle de activación
 - **content.js**: Sobreescribe `window.open()` para bloquear popups
 - **background.js**: Detecta pestañas abiertas sin interacción directa y las cierra
-
-## Comportamiento
-
-| Global | Por sitio | Resultado |
-|--------|-----------|-----------|
-| OFF | OFF/ON | No bloquea nada |
-| ON | OFF | No bloquea |
-| ON | ON | Bloquea popups |
 
 ## Archivos
 
