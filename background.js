@@ -1,8 +1,12 @@
 let enabledSites = {};
+let globalEnabled = false;
 
-chrome.storage.sync.get(['enabledSites'], (result) => {
+chrome.storage.sync.get(['enabledSites', 'globalEnabled'], (result) => {
   if (result.enabledSites) {
     enabledSites = result.enabledSites;
+  }
+  if (result.globalEnabled) {
+    globalEnabled = result.globalEnabled;
   }
 });
 
@@ -12,11 +16,13 @@ function updateTitle(tabId) {
     try {
       const url = new URL(tab.url);
       const domain = url.hostname;
-      const isEnabled = enabledSites[domain] === true;
+      const siteEnabled = enabledSites[domain] === true;
 
       chrome.action.setTitle({
         tabId: tabId,
-        title: isEnabled ? `Anti-Popups: ON (${domain})` : `Anti-Popups: OFF (${domain}) - Click to enable`
+        title: globalEnabled
+          ? (siteEnabled ? `Anti-Popups: ON (${domain})` : `Anti-Popups: OFF (${domain}) - Click to enable`)
+          : `Anti-Popups: Global OFF - Click to open settings`
       });
     } catch (e) {}
   });
@@ -34,10 +40,12 @@ chrome.action.onClicked.addListener(async (tab) => {
 
     updateTitle(tab.id);
 
-    chrome.tabs.sendMessage(tab.id, {
-      type: 'STATE_CHANGED',
-      enabled: enabledSites[domain]
-    });
+    if (globalEnabled) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'STATE_CHANGED',
+        enabled: enabledSites[domain]
+      });
+    }
   } catch (e) {}
 });
 
@@ -50,7 +58,7 @@ chrome.tabs.onCreated.addListener(async (newTab) => {
       const openerUrl = new URL(openerTab.url);
       const domain = openerUrl.hostname;
 
-      if (enabledSites[domain] === true) {
+      if (globalEnabled && enabledSites[domain] === true) {
         const wasUserInitiated = newTab.userInitiated;
 
         if (!wasUserInitiated) {
@@ -70,6 +78,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_STATE') {
     const domain = message.domain;
-    sendResponse({ enabled: enabledSites[domain] === true });
+    sendResponse({
+      globalEnabled: globalEnabled,
+      siteEnabled: enabledSites[domain] === true
+    });
   }
 });

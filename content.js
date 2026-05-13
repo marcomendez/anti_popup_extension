@@ -1,13 +1,19 @@
-let isEnabled = false;
+let globalEnabled = false;
+let siteEnabled = false;
+
+function shouldBlock() {
+  return globalEnabled && siteEnabled;
+}
 
 chrome.runtime.sendMessage({ type: 'GET_STATE', domain: window.location.hostname }, (response) => {
-  if (response !== undefined && response.enabled !== undefined) {
-    isEnabled = response.enabled;
+  if (response !== undefined) {
+    globalEnabled = response.globalEnabled === true;
+    siteEnabled = response.siteEnabled === true;
   }
 });
 
 window.open = function() {
-  if (isEnabled) {
+  if (shouldBlock()) {
     return null;
   }
   return originalWindowOpen.apply(this, arguments);
@@ -17,16 +23,15 @@ const originalWindowOpen = window.open;
 
 const originalDocumentWrite = document.write;
 document.write = function() {
-  if (isEnabled) return;
+  if (shouldBlock()) return;
   return originalDocumentWrite.apply(this, arguments);
 };
 
 window.addEventListener('DOMContentLoaded', function() {
-  if (!isEnabled) return;
+  if (!shouldBlock()) return;
 
   document.querySelectorAll('a[target="_blank"]').forEach(function(link) {
     if (!link.hasAttribute('rel') || !link.getAttribute('rel').includes('noopener')) {
-      const originalHref = link.getAttribute('href');
       link.addEventListener('click', function(e) {
         if (!e.isTrusted) return;
       });
@@ -36,8 +41,15 @@ window.addEventListener('DOMContentLoaded', function() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'STATE_CHANGED') {
-    isEnabled = message.enabled;
+    siteEnabled = message.enabled;
+  }
+  if (message.type === 'GLOBAL_STATE_CHANGED') {
+    globalEnabled = message.enabled;
   }
 });
 
-window.addEventListener('beforeunload', function() {});
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (changes.globalEnabled) {
+    globalEnabled = changes.globalEnabled.newValue === true;
+  }
+});

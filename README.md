@@ -11,31 +11,53 @@ Extension para Chrome que bloquea popups y pestañas abiertas automáticamente p
 
 ## Cómo usar
 
-### Por defecto: APAGADO
-La extensión no bloquea ningún popup hasta que tú la actives manualmente.
+### Interfaz (popup)
+Al hacer clic en el icono de la extensión se abre un menú con dos controles:
 
-### Activar el bloqueo en un sitio
-1. Navega al sitio donde quieres bloquear popups
-2. Haz **clic en el icono de la extensión** (esquina superior derecha del navegador)
-3. El título del icono cambiará a `Anti-Popups: ON (dominio.com)`
-4. A partir de ahora, todos los popups en ese sitio serán bloqueados
+1. **Extensión global** - Toggle principal
+   - **OFF (por defecto)**: La extensión no bloquea nada en ningún sitio
+   - **ON**: Activa el bloqueo (sujeto al estado por sitio)
 
-### Desactivar el bloqueo
-1. Haz **clic en el icono de la extensión** nuevamente
-2. El título cambiará a `Anti-Popups: OFF (dominio.com)`
-3. Los popups funcionarán normalmente en ese sitio
+2. **Bloqueo en este sitio** - Toggle individual
+   - Solo está disponible cuando el toggle global está ON
+   - Permite activar/desactivar el bloqueo solo para el sitio actual
+
+### Ejemplo de uso
+
+1. **Quieres bloquear popups en "sitio.com"**:
+   - Activa el toggle "Extensión global"
+   - Activa el toggle "Bloqueo en este sitio" (o usa el botón)
+
+2. **Quieres desactivar temporalmente**:
+   - Desactiva el toggle "Extensión global"
+   - No bloquea nada en ningún sitio
+
+3. **Quieres permitir popups en un sitio específico**:
+   - Mantén "Extensión global" ON
+   - Desactiva "Bloqueo en este sitio" para ese dominio
 
 ### Persistencia
-El estado (activado/desactivado) se guarda automáticamente por cada dominio. Si cierras Chrome y vuelves a abrirlo, recordarás qué sitios tenías activos.
+- El estado global y por sitio se guarda automáticamente.
+- Si cierres Chrome y vuelvas a abrirlo, recordará la configuración.
 
 ## Cómo funciona
 
-- **Content Script (`content.js`)**: Se inyecta en todas las páginas. Sobreescribe `window.open()` para que devuelva `null` cuando está activo, impidiendo que se abran ventanas emergentes.
+- **popup.html + popup.js**: Interfaz con toggles global y por sitio
+- **content.js**: Sobreescribe `window.open()` para bloquear popups
+- **background.js**: Detecta pestañas abiertas sin interacción directa y las cierra
 
-- **Background Script (`background.js`)**: Detecta cuando se crean nuevas pestañas sin interacción directa del usuario y las cierra automáticamente si el bloqueo está activo para ese sitio.
+## Comportamiento
+
+| Global | Por sitio | Resultado |
+|--------|-----------|-----------|
+| OFF | OFF/ON | No bloquea nada |
+| ON | OFF | No bloquea |
+| ON | ON | Bloquea popups |
 
 ## Archivos
 
 - `manifest.json` - Manifiesto de la extensión (Manifest V3)
+- `popup.html` - Interfaz de la extensión
+- `popup.js` - Lógica de la interfaz
 - `background.js` - Service worker
 - `content.js` - Script inyectado en páginas
