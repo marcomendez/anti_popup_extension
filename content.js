@@ -1,16 +1,14 @@
 let globalEnabled = false;
-let siteEnabled = false;
 
 function shouldBlock() {
-  return globalEnabled && siteEnabled;
+  return globalEnabled;
 }
 
-chrome.runtime.sendMessage({ type: 'GET_STATE', domain: window.location.hostname }, (response) => {
-  if (response !== undefined) {
-    globalEnabled = response.globalEnabled === true;
-    siteEnabled = response.siteEnabled === true;
-  }
+chrome.storage.sync.get(['globalEnabled'], (result) => {
+  globalEnabled = result.globalEnabled === true;
 });
+
+const originalWindowOpen = window.open;
 
 window.open = function() {
   if (shouldBlock()) {
@@ -18,8 +16,6 @@ window.open = function() {
   }
   return originalWindowOpen.apply(this, arguments);
 };
-
-const originalWindowOpen = window.open;
 
 const originalDocumentWrite = document.write;
 document.write = function() {
@@ -39,16 +35,7 @@ window.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'STATE_CHANGED') {
-    siteEnabled = message.enabled;
-  }
-  if (message.type === 'GLOBAL_STATE_CHANGED') {
-    globalEnabled = message.enabled;
-  }
-});
-
-chrome.storage.onChanged.addListener((changes, area) => {
+chrome.storage.onChanged.addListener((changes, areaName) => {
   if (changes.globalEnabled) {
     globalEnabled = changes.globalEnabled.newValue === true;
   }
